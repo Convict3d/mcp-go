@@ -475,14 +475,13 @@ This library implements the complete MCP specification including:
 
 ## Requirements
 
-- Go 1.24 or later
+- Go 1.21 or later
 - Minimal external dependencies (see go.mod)
 
 ## Dependencies
 
 The library uses these well-maintained dependencies:
 
-- `github.com/creachadair/jrpc2` - JSON-RPC 2.0 implementation
 - `github.com/ybbus/jsonrpc/v3` - Additional JSON-RPC utilities
 - `golang.org/x/sync` - Go synchronization primitives
 
@@ -504,4 +503,3 @@ MIT License - see LICENSE file for details.
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) - Official specification
 - [MCP Servers](https://github.com/modelcontextprotocol/servers) - Server implementations
-- [Claude Desktop](https://claude.ai/desktop) - Desktop app with MCP support
