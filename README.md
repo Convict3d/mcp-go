@@ -2,8 +2,8 @@
 
 A professional Go client library for the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). This library provides a clean, type-safe implementation for connecting Go applications to MCP servers.
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/convict3d/mcp-go.svg)](https://pkg.go.dev/github.com/convict3d/mcp-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/convict3d/mcp-go)](https://goreportcard.com/report/github.com/convict3d/mcp-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/Convict3d/mcp-go.svg)](https://pkg.go.dev/github.com/Convict3d/mcp-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Convict3d/mcp-go)](https://goreportcard.com/report/github.com/Convict3d/mcp-go)
 
 ## Overview
 
@@ -18,7 +18,7 @@ The Model Context Protocol enables seamless integration between LLM applications
 ## Installation
 
 ```bash
-go get github.com/convict3d/mcp-go
+go get github.com/Convict3d/mcp-go
 ```
 
 ## Quick Start
@@ -31,8 +31,8 @@ import (
     "log"
     "time"
 
-    "github.com/convict3d/mcp-go/client"
-    "github.com/convict3d/mcp-go/types"
+    "github.com/Convict3d/mcp-go/client"
+    "github.com/Convict3d/mcp-go/types"
 )
 
 func main() {
@@ -409,7 +409,7 @@ err := c.Initialize(types.LatestProtocolVersion)
 For maximum control, use the transport layer directly:
 
 ```go
-import "github.com/convict3d/mcp-go/transport"
+import "github.com/Convict3d/mcp-go/transport"
 
 // Create transport with options
 t := transport.NewHTTPTransport("http://localhost:9831/mcp",
