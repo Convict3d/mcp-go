@@ -4,6 +4,9 @@ A professional Go client library for the [Model Context Protocol (MCP)](https://
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/Convict3d/mcp-go.svg)](https://pkg.go.dev/github.com/Convict3d/mcp-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Convict3d/mcp-go)](https://goreportcard.com/report/github.com/Convict3d/mcp-go)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Convict3d/mcp-go)](https://golang.org)
+[![Tests](https://github.com/Convict3d/mcp-go/workflows/Tests/badge.svg)](https://github.com/Convict3d/mcp-go/actions)
 
 ## Overview
 
