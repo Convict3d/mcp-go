@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/convict3d/mcp-go/client"
-	"github.com/convict3d/mcp-go/transport/http"
-	"github.com/convict3d/mcp-go/types"
+	"github.com/Convict3d/mcp-go/client"
+	"github.com/Convict3d/mcp-go/transport/http"
+	"github.com/Convict3d/mcp-go/types"
 )
 
 func main() {

@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/convict3d/mcp-go/transport"
-	"github.com/convict3d/mcp-go/types"
+	"github.com/Convict3d/mcp-go/transport"
+	"github.com/Convict3d/mcp-go/types"
 )
 
 // Client represents a high-level MCP client

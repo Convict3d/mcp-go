@@ -1,4 +1,4 @@
-module github.com/convict3d/mcp-go
+module github.com/Convict3d/mcp-go
 
 go 1.24
 
