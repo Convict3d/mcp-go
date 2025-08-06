@@ -1,0 +1,84 @@
+run:
+  timeout: 5m
+  go: "1.24"
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gci
+    - gofmt
+    - goimports
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+    - unparam
+    - gocyclo
+    - gofumpt
+    - goconst
+    - gocritic
+    - godot
+    - gomnd
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - nolintlint
+    - rowserrcheck
+    - sqlclosecheck
+    - whitespace
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/Convict3d/mcp-go)
+    skip-generated: true
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/Convict3d/mcp-go
+
+  revive:
+    rules:
+      - name: exported
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
+
+  gosec:
+    excludes:
+      - G404 # Use of weak random number generator
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+        - goconst
+        - gosec
+    - path: examples/
+      linters:
+        - gomnd
+        - goconst
+        - gosec
+        - errcheck
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
