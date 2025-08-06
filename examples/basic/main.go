@@ -63,7 +63,7 @@ func main() {
 
 				// Example tool call - adjust arguments based on your server
 				result, err := c.CallTool("browser_navigate", map[string]interface{}{
-					"url": "https://httpbin.org/get",
+					"url": "https://facebook.com",
 				})
 
 				if err != nil {
@@ -120,6 +120,75 @@ func main() {
 								if len(imageContents) > 0 {
 									for _, img := range imageContents {
 										fmt.Printf("📸 Screenshot captured (image data available, type: %s)\n", img.MimeType)
+									}
+								}
+							default:
+								fmt.Printf("📄 Tool output available (%d items)\n", len(result.Content))
+							}
+						}
+					}
+				}
+
+				result, err = c.CallTool("browser_snapshot", map[string]interface{}{})
+				if err != nil {
+					log.Printf("Snapshot tool call failed: %v", err)
+				} else {
+					fmt.Printf("✅ Snapshot taken successfully!\n")
+					if result.IsError {
+						fmt.Printf("⚠️  Snapshot tool returned an error\n")
+					}
+					if len(result.Content) > 0 {
+						allContent := result.GetAllContent()
+
+						for _, content := range allContent {
+							fmt.Printf("📄 Content type: %s\n", content.ContentType())
+							switch content.ContentType() {
+							case "text":
+								textContents := result.GetTextContent()
+								if len(textContents) > 0 {
+									fmt.Printf("📄 Tool output: %s\n", textContents[0].Text)
+								}
+							case "image":
+								imageContents := result.GetImageContent()
+								if len(imageContents) > 0 {
+									for _, img := range imageContents {
+										fmt.Printf("📸 Snapshot captured (image data available, type: %s)\n", img.MimeType)
+									}
+								}
+							default:
+								fmt.Printf("📄 Tool output available (%d items)\n", len(result.Content))
+							}
+						}
+					}
+				}
+
+				result, err = c.CallTool("browser_click", map[string]interface{}{
+					"element": "link",
+					"ref":     "e107",
+				})
+				if err != nil {
+					log.Printf("Click tool call failed: %v", err)
+				} else {
+					fmt.Printf("✅ Click action performed successfully!\n")
+					if result.IsError {
+						fmt.Printf("⚠️  Click tool returned an error\n")
+					}
+					if len(result.Content) > 0 {
+						allContent := result.GetAllContent()
+
+						for _, content := range allContent {
+							fmt.Printf("📄 Content type: %s\n", content.ContentType())
+							switch content.ContentType() {
+							case "text":
+								textContents := result.GetTextContent()
+								if len(textContents) > 0 {
+									fmt.Printf("📄 Tool output: %s\n", textContents[0].Text)
+								}
+							case "image":
+								imageContents := result.GetImageContent()
+								if len(imageContents) > 0 {
+									for _, img := range imageContents {
+										fmt.Printf("📸 Click action captured (image data available, type: %s)\n", img.MimeType)
 									}
 								}
 							default:

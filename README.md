@@ -105,18 +105,41 @@ c := client.NewClient("http://localhost:9831/mcp",
 You can also provide your own transport for advanced configurations:
 
 ```go
-// Create a custom transport with specific options
-transport := transport.NewHTTPTransport("http://localhost:9831/mcp",
+// HTTP Transport - Client connects to running MCP server
+httpTransport := transport.NewHTTPTransport("http://localhost:9831/mcp",
     transport.WithTimeout(60*time.Second),
     transport.WithHeader("X-Custom-Auth", "token123"),
     transport.WithSSESupport(),
 )
 
+// Stdio Transport - Client launches MCP server as subprocess  
+stdioTransport, err := transport.NewStdioTransport("mcp-filesystem-server",
+    transport.WithArgs("--root", "/home/user/documents"),
+    transport.WithWorkingDir("/tmp"),
+)
+
 // Use the transport with the client
-c := client.NewClient("http://localhost:9831/mcp",
-    client.WithTransport(transport),
+c := client.NewClient(
+    client.WithTransport(stdioTransport),
     client.WithClientInfo("my-app", "1.0.0"),
 )
+```
+
+### Stdio Transport Use Cases
+
+The stdio transport supports different scenarios:
+
+```go
+// 1. Client launches MCP server (most common)
+transport, err := transport.NewStdioTransport("mcp-server-executable",
+    transport.WithArgs("--config", "config.json"),
+)
+
+// 2. Use existing streams (for custom scenarios)  
+transport, err := transport.NewStdioTransportFromStreams(stdin, stdout, stderr)
+
+// 3. Current process IS an MCP server (rare)
+transport, err := transport.NewStdioTransportFromOS()
 ```
 
 ### Configuration Options
