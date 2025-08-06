@@ -1,5 +1,5 @@
-// Package transport provides stdio transport implementation for MCP
-package transport
+// Package stdio implements MCP over stdio transport
+package stdio
 
 import (
 	"bufio"
@@ -16,8 +16,8 @@ import (
 	"github.com/ybbus/jsonrpc/v3"
 )
 
-// StdioTransport implements MCP over stdio (standard input/output)
-type StdioTransport struct {
+// Transport implements MCP over stdio (standard input/output)
+type Transport struct {
 	cmd       *exec.Cmd
 	stdin     io.WriteCloser
 	stdout    io.ReadCloser
@@ -41,72 +41,82 @@ type StdioTransport struct {
 	readerDone chan struct{}
 }
 
-// StdioConfig holds configuration for stdio transport
-type StdioConfig struct {
-	Command    string   // Command to execute
-	Args       []string // Command arguments
-	WorkingDir string   // Working directory for the command
-	Env        []string // Environment variables
+// Config holds configuration for stdio transport
+type Config struct {
+	Command    string        // Command to execute
+	Args       []string      // Command arguments
+	WorkingDir string        // Working directory for the command
+	Env        []string      // Environment variables
+	Timeout    time.Duration // Request timeout
 }
 
-// StdioOption defines a function that configures the stdio transport
-type StdioOption func(*StdioConfig)
+// Option defines a function that configures the stdio transport
+type Option func(*Config)
 
 // WithCommand sets the command to execute
-func WithCommand(command string) StdioOption {
-	return func(c *StdioConfig) {
+func WithCommand(command string) Option {
+	return func(c *Config) {
 		c.Command = command
 	}
 }
 
 // WithArgs sets the command arguments
-func WithArgs(args ...string) StdioOption {
-	return func(c *StdioConfig) {
+func WithArgs(args ...string) Option {
+	return func(c *Config) {
 		c.Args = args
 	}
 }
 
 // WithWorkingDir sets the working directory
-func WithWorkingDir(dir string) StdioOption {
-	return func(c *StdioConfig) {
+func WithWorkingDir(dir string) Option {
+	return func(c *Config) {
 		c.WorkingDir = dir
 	}
 }
 
 // WithEnv sets environment variables
-func WithEnv(env []string) StdioOption {
-	return func(c *StdioConfig) {
+func WithEnv(env []string) Option {
+	return func(c *Config) {
 		c.Env = env
 	}
 }
 
-// defaultStdioConfig returns a default stdio configuration
-func defaultStdioConfig() *StdioConfig {
-	return &StdioConfig{
-		Command: "",
-		Args:    []string{},
-		Env:     os.Environ(),
+// WithTimeout sets the request timeout
+func WithTimeout(timeout time.Duration) Option {
+	return func(c *Config) {
+		c.Timeout = timeout
 	}
 }
 
-// NewStdioTransport creates a new stdio transport with options
-func NewStdioTransport(command string, opts ...StdioOption) (*StdioTransport, error) {
-	config := defaultStdioConfig()
+// defaultConfig returns a default stdio configuration
+func defaultConfig() *Config {
+	return &Config{
+		Command: "",
+		Args:    []string{},
+		Env:     os.Environ(),
+		Timeout: 30 * time.Second,
+	}
+}
+
+// NewTransport creates a new stdio transport with options
+func NewTransport(command string, args []string, opts ...Option) (*Transport, error) {
+	config := defaultConfig()
 	config.Command = command
+	config.Args = args
 
 	// Apply all options
 	for _, opt := range opts {
 		opt(config)
 	}
 
-	return NewStdioTransportWithConfig(*config)
+	return NewTransportWithConfig(*config)
 }
 
-// NewStdioTransportFromStreams creates a stdio transport using existing streams
+// NewTransportFromStreams creates a stdio transport using existing streams
 // This is useful when your program IS the MCP server and wants to communicate
 // over its own stdin/stdout, or when you have custom streams
-func NewStdioTransportFromStreams(stdin io.WriteCloser, stdout io.ReadCloser, stderr io.ReadCloser) (*StdioTransport, error) {
-	transport := &StdioTransport{
+func NewTransportFromStreams(stdin io.WriteCloser, stdout io.ReadCloser, stderr io.ReadCloser) (*Transport, error) {
+	transport := &Transport{
 		cmd:             nil, // No subprocess when using existing streams
 		stdin:           stdin,
 		stdout:          stdout,
@@ -129,11 +139,11 @@ func NewStdioTransportFromStreams(stdin io.WriteCloser, stdout io.ReadCloser, st
 	return transport, nil
 }
 
-// NewStdioTransportFromOS creates a stdio transport using the current process's stdin/stdout
+// NewTransportFromOS creates a stdio transport using the current process's stdin/stdout
 // This is useful when your Go program IS an MCP server
-func NewStdioTransportFromOS() (*StdioTransport, error) {
+func NewTransportFromOS() (*Transport, error) {
 	// Note: We don't close os.Stdin/Stdout in this case since they're owned by the OS
-	return NewStdioTransportFromStreams(
+	return NewTransportFromStreams(
 		&nopCloser{os.Stdin},  // Wrap to prevent closing
 		&nopCloser{os.Stdout}, // Wrap to prevent closing
 		&nopCloser{os.Stderr}, // Wrap to prevent closing
@@ -149,8 +159,8 @@ func (nc *nopCloser) Close() error {
 	return nil // Don't actually close os.Stdin/Stdout/Stderr
 }
 
-// NewStdioTransportWithConfig creates a new stdio transport with config
-func NewStdioTransportWithConfig(config StdioConfig) (*StdioTransport, error) {
+// NewTransportWithConfig creates a new stdio transport with config
+func NewTransportWithConfig(config Config) (*Transport, error) {
 	if config.Command == "" {
 		return nil, fmt.Errorf("command is required for stdio transport")
 	}
@@ -191,7 +201,7 @@ func NewStdioTransportWithConfig(config StdioConfig) (*StdioTransport, error) {
 		return nil, fmt.Errorf("failed to start command: %w", err)
 	}
 
-	transport := &StdioTransport{
+	transport := &Transport{
 		cmd:             cmd,
 		stdin:           stdin,
 		stdout:          stdout,
@@ -213,7 +223,7 @@ func NewStdioTransportWithConfig(config StdioConfig) (*StdioTransport, error) {
 }
 
 // readMessages reads and processes JSON-RPC messages from stdout
-func (t *StdioTransport) readMessages() {
+func (t *Transport) readMessages() {
 	defer close(t.readerDone)
 
 	for {
@@ -239,7 +249,7 @@ func (t *StdioTransport) readMessages() {
 }
 
 // processMessage processes a single JSON-RPC message
-func (t *StdioTransport) processMessage(line string) {
+func (t *Transport) processMessage(line string) {
 	var message map[string]interface{}
 	if err := json.Unmarshal([]byte(line), &message); err != nil {
 		fmt.Fprintf(os.Stderr, "MCP invalid JSON received: %v\n", err)
@@ -267,7 +277,7 @@ func (t *StdioTransport) processMessage(line string) {
 }
 
 // handleResponse handles JSON-RPC responses
-func (t *StdioTransport) handleResponse(message map[string]interface{}, id interface{}) {
+func (t *Transport) handleResponse(message map[string]interface{}, id interface{}) {
 	idFloat, ok := id.(float64)
 	if !ok {
 		return
@@ -318,7 +328,7 @@ func (t *StdioTransport) handleResponse(message map[string]interface{}, id inter
 }
 
 // handleServerRequest handles requests from the server
-func (t *StdioTransport) handleServerRequest(message map[string]interface{}, id interface{}) {
+func (t *Transport) handleServerRequest(message map[string]interface{}, id interface{}) {
 	method, ok := message["method"].(string)
 	if !ok {
 		t.sendErrorResponse(id, -32600, "Invalid request: missing method")
@@ -340,7 +350,7 @@ func (t *StdioTransport) handleServerRequest(message map[string]interface{}, id 
 }
 
 // handleNotification handles notifications from the server
-func (t *StdioTransport) handleNotification(message map[string]interface{}) {
+func (t *Transport) handleNotification(message map[string]interface{}) {
 	method, ok := message["method"].(string)
 	if !ok {
 		return
@@ -354,7 +364,7 @@ func (t *StdioTransport) handleNotification(message map[string]interface{}) {
 }
 
 // sendErrorResponse sends an error response to the server
-func (t *StdioTransport) sendErrorResponse(id interface{}, code int, message string) {
+func (t *Transport) sendErrorResponse(id interface{}, code int, message string) {
 	response := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"id":      id,
@@ -368,7 +378,7 @@ func (t *StdioTransport) sendErrorResponse(id interface{}, code int, message str
 }
 
 // sendSuccessResponse sends a success response to the server
-func (t *StdioTransport) sendSuccessResponse(id interface{}, result interface{}) {
+func (t *Transport) sendSuccessResponse(id interface{}, result interface{}) {
 	response := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"id":      id,
@@ -379,7 +389,7 @@ func (t *StdioTransport) sendSuccessResponse(id interface{}, result interface{})
 }
 
 // sendMessage sends a JSON-RPC message to the server
-func (t *StdioTransport) sendMessage(message interface{}) error {
+func (t *Transport) sendMessage(message interface{}) error {
 	data, err := json.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("failed to marshal message: %w", err)
@@ -396,18 +406,23 @@ func (t *StdioTransport) sendMessage(message interface{}) error {
 	return err
 }
 
+// generateRequestID generates a unique request ID
+func (t *Transport) generateRequestID() int64 {
+	return atomic.AddInt64(&t.nextID, 1)
+}
+
 // SetNotificationHandler sets the handler for server notifications
-func (t *StdioTransport) SetNotificationHandler(handler func(method string, params interface{})) {
+func (t *Transport) SetNotificationHandler(handler func(method string, params interface{})) {
 	t.notificationHandler = handler
 }
 
 // SetRequestHandler sets the handler for server requests
-func (t *StdioTransport) SetRequestHandler(handler func(method string, params interface{}) (interface{}, error)) {
+func (t *Transport) SetRequestHandler(handler func(method string, params interface{}) (interface{}, error)) {
 	t.requestHandler = handler
 }
 
 // readStderr reads and logs stderr output
-func (t *StdioTransport) readStderr() {
+func (t *Transport) readStderr() {
 	scanner := bufio.NewScanner(t.stderr)
 	for scanner.Scan() {
 		// Log stderr to help with debugging
@@ -417,7 +432,7 @@ func (t *StdioTransport) readStderr() {
 }
 
 // Call makes a JSON-RPC call over stdio
-func (t *StdioTransport) Call(ctx context.Context, result interface{}, method string, params ...interface{}) error {
+func (t *Transport) Call(ctx context.Context, result interface{}, method string, params ...interface{}) error {
 	t.mu.RLock()
 	if t.closed {
 		t.mu.RUnlock()
@@ -486,21 +501,21 @@ func (t *StdioTransport) Call(ctx context.Context, result interface{}, method st
 }
 
 // CallRaw makes a JSON-RPC call and returns the raw response
-func (t *StdioTransport) CallRaw(ctx context.Context, method string, params interface{}) (map[string]interface{}, error) {
+func (t *Transport) CallRaw(ctx context.Context, method string, params interface{}) (map[string]interface{}, error) {
 	var result map[string]interface{}
 	err := t.Call(ctx, &result, method, params)
 	return result, err
 }
 
 // GetSessionID returns the current session ID
-func (t *StdioTransport) GetSessionID() string {
+func (t *Transport) GetSessionID() string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.sessionID
 }
 
 // Close closes the stdio transport
-func (t *StdioTransport) Close() error {
+func (t *Transport) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
