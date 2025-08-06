@@ -73,7 +73,7 @@ func (ctr *CallToolResult) GetTextContent() []TextContent {
 	var texts []TextContent
 	for _, content := range ctr.Content {
 		if contentMap, ok := content.(map[string]interface{}); ok {
-			if contentType, ok := contentMap["type"].(string); ok && contentType == "text" {
+			if contentType, ok := contentMap["type"].(string); ok && contentType == ContentTypeText {
 				if text, ok := contentMap["text"].(string); ok {
 					textContent := TextContent{
 						Type: contentType,
